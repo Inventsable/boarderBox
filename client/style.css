@@ -1,0 +1,66 @@
+:root {
+  --quad: cubic-bezier(0.48, 0.04, 0.52, 0.96);
+  --quart: cubic-bezier(0.76, 0.00, 0.24, 1.00);
+  --quint: cubic-bezier(0.84, 0.00, 0.16, 1.00);
+  --color-bg: #323232;
+  --color-selected: #46a0f5;
+  --color-border: #3e3e3e;
+  --color-hover: #292929;
+  --color-dark: #2b2b2b;
+  --color-night: #1f1f1f;
+  --color-text: #a1a1a1;
+  font-size: 12px;
+  font-family: Rubik;
+  color: var(--color-text);
+  margin: .5rem .25rem .5rem .25rem;
+  background-color: var(--color-bg);
+}
+
+.logic {
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  margin: .5rem .25rem 0px 3rem;
+  font-size: 1.25rem;
+}
+
+.userFEN {
+  width: 100%;
+}
+
+.userInput {
+  display: flex;
+  padding: .25rem .5rem;
+  color: var(--color-text);
+  width: 80%;
+  background-color: var(--color-night);
+  border: 2px solid var(--color-border);
+}
+
+.annoBounds {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+}
+
+.label {
+  display: flex;
+  justify-content: flex-end;
+  margin-right: .5rem;
+  width: 3rem;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.anno {
+  display: flex;
+  justify-content: center;
+  border: 2px solid var(--color-border);
+  background-color: var(--color-dark);
+  padding: .5rem .25rem;
+  min-width: 80%;
+  /* width: auto; */
+  margin: .5rem .25rem;
+}
