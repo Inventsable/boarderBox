@@ -2,8 +2,4 @@
 
 ## building
 
-Dynamic string-driven components for grid-based games
-
-* raw
-* ugly
-* ~~pretty~~
+![](https://i.imgur.com/arDqPyL.png)

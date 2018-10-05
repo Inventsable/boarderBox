@@ -1,5 +1,39 @@
-
 window.Event = new Vue();
+
+Vue.component('fengrid', {
+  template: `
+    <div class="navGrid">
+      <div
+        v-for="cell in board"
+        class="navCell">
+          <div class="navCellHigh">
+            <span>{{cell.index}}</span>
+          </div>
+          <div class="navCellMid">
+            <span>{{cell.value}}</span>
+          </div>
+          <div class="navCellLow">
+            <span>x:{{cell.x}}, y:{{cell.y}}</span>
+          </div>
+      </div>
+    </div>
+  `,
+  computed: {
+    board: function() {
+      var self = this, grid = [];
+      for (var i = 0; i < this.$root.TOTAL; i++) {
+        var child = {
+          index: i,
+          value: this.$root.FEN[i],
+          x: this.$root.iGetPos(i)[1],
+          y: this.$root.iGetPos(i)[0],
+        };
+        grid.push(child);
+      }
+      return grid;
+    }
+  }
+})
 
 Vue.component('logic', {
   template : `
@@ -29,13 +63,6 @@ Vue.component('logic', {
     }
   },
 })
-// 8 x 8 //
-  // RAW
-    // RKBZQBKRPPPPPP1P111111P111111111111p111111111111ppp1pppprkbzqbkr
-  // PRETTY
-    // RKBZQBKR/PPPPPP1P/6P1/8/3p4/8/ppp1pppp/rkbzqbkr
-  // UGLY
-    // RKBZQBKR/PPPPPP1P/111111P1/11111111/111p1111/11111111/ppp1pppp/rkbzqbkr
 var app = new Vue({
   el: '#app',
   data: {
@@ -45,6 +72,16 @@ var app = new Vue({
     Y: 0,
     FENdex: 0,
     FEN: 'RKBZQBKRPPPPPP1P111111P111111111111p111111111111ppp1pppprkbzqbkr',
+    rx: {
+      unique: /[a-zA-Z]|(\d*)/gm,
+      empty: /^$/gm,
+      isWord: /[^\d]/,
+      lowercase: /[a-z]/,
+      single: /./,
+      isRaw: /^[a-zA-Z1]*$/,
+      isUgly: /^[a-zA-Z1\/]*\/[a-zA-Z1]*$/,
+      isPretty: /(\w|\/)*\/\w{1,7}\/(\w|\/)*$/,
+    },
   },
   computed: {
     LAST: function() {
@@ -53,23 +90,64 @@ var app = new Vue({
     TOTAL: function() {
       return this.ROWS * this.COLS;
     },
-    FENpretty: function() {
-      return this.FEN;
-    },
     FENugly: function() {
+      return this.buildFEN(this.FEN).ugly;
+    },
+    FENpretty: function() {
+      return this.buildFEN(this.FENugly).pretty;
+    },
+  },
+  methods: {
+    FENotype: function(str) {
+      var result = '';
+      if (this.rx.isRaw.test(str)) {
+        result = 'raw'
+      } else {
+        if (this.rx.isPretty.test(str))
+          result = 'pretty'
+        else if (this.rx.isUgly.test(str))
+          result = 'ugly'
+        else
+          result = 'unrecognized'
+      }
+      return result;
+    },
+    buildFEN: function(str) {
       var self = this;
-      var result = this.chunkString(self.FEN, self.ROWS);
+      return FEN = {
+        raw: str,
+        pretty: self.prettify(str),
+        ugly: self.uglify(str),
+      }
+    },
+    prettify: function(str) {
+      var result = str.split('/');
+      var conv = '';
+      for (var i = 0; i < result.length; i++) {
+        var match = result[i].match(this.rx.unique);
+        match.pop();
+        for (var e = 0; e < match.length; e++) {
+          if (this.rx.isWord.test(match[e]))
+            conv += match[e]
+          else
+            conv += match[e].length
+        }
+        if (i < result.length - 1)
+          conv += '/'
+      }
+      return conv;
+    },
+    uglify: function(str) {
+      var self = this;
+      var result = this.chunkString(str, self.ROWS);
       var conv = '';
       for (var i = 0; i < result.length; i++) {
         conv += result[i];
         if (i < result.length - 1)
           conv += '/'
       }
-      console.log(conv);
       return conv;
     },
-  },
-  methods: {
     iGetRange: function(index) {
       var match = false;
       var minmax = this.iGetMinMax();
@@ -123,6 +201,9 @@ var app = new Vue({
         inside: ${this.iGetBounds(index)[0]}`);
       }
     },
+    datum: function() {
+      console.log(`${this.ROWS} x ${this.COLS} grid of ${this.TOTAL} tiles`);
+    },
     // https://stackoverflow.com/questions/7033639/split-large-string-in-n-size-chunks-in-javascript/14349616#14349616
     chunkString(str, len) {
       var _size = Math.ceil(str.length/len), _ret  = new Array(_size), _offset;
@@ -138,12 +219,9 @@ var app = new Vue({
     }
   },
   mounted: function () {
-    console.log(`${this.ROWS} x ${this.COLS} grid of ${this.TOTAL} tiles`);
+    this.datum();
     this.iPreview(62);
-    this.iPreview(0);
-    this.iPreview(3);
-    this.iPreview(21);
-    this.iPreview(3);
+
   },
   beforeDestroy: function () {
 
