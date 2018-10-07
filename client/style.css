@@ -120,7 +120,14 @@
   background-color: var(--colorA);
 }
 
-.nav-Path {
+.navCell-Char {
+  color: var(--colorLimit);
+  background-color: var(--colorB);
+  border-color: var(--colorLimit);
+  /* border-color: var(--color-selected; */
+}
+
+.navCell-Path {
   color: var(--colorFreeText);
   background-color: var(--colorB);
   border-color: var(--colorFree);

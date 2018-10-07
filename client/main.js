@@ -193,16 +193,31 @@ Vue.component('fengrid', {
   data() {
     return {
       grid: [],
+      hasSelection: false,
+      selection: {
+        index: false,
+      },
+      selectedIndex: false,
     }
   },
   methods: {
     cellClass: function(cell) {
+      this.checkSelected();
       var style = 'navCell';
       if (cell.isSelected) {
         style += '-Selected';
+      } else if (cell.isActive) {
+        style += '-Active'
+        // style += this.grid[cell.index].isActive ? '-Active' : '-Idle';
+      } else if (cell.isPath) {
+        if (cell.hasChar) {
+          style += '-Char'
+        } else {
+          style += '-Path'
+        }
+        // style += this.grid[cell.index].isPath ? ' nav-Path' : '';
       } else {
-        style += this.grid[cell.index].isActive ? '-Active' : '-Idle';
-        style += this.grid[cell.index].isPath ? ' nav-Path' : '';
+        style += '-Idle'
       }
       return style;
     },
@@ -225,61 +240,176 @@ Vue.component('fengrid', {
     },
     hover: function(index, evt) {
       // if (this.$root.Shift)
-      if (!this.selection) {
+      if (!this.hasSelection) {
         this.hoverToggle(true, index, evt);
       }
       // this.iMove(index, 'N')
     },
     hoverOut: function(index, evt) {
-      if (!this.selection) {
+      if (!this.hasSelection) {
         this.hoverToggle(false, index, evt);
         this.clearPath(index);
       }
       this.$root.iParseModifiers(evt);
     },
-    select: function(cell, evt) {
-      // ????
-      if ((this.selection) && (this.selection.index !== cell.index)) {
-        console.log(`${this.selection.index}, ${cell.index}`);
-        var siblings = this.iGetPotentialMoves(this.selection.index);
-        var matches = [], dir = false, self = this;
-        // console.log(siblings);
-        var wind = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
-        for (var i = 0; i < wind.length; i++) {
-          var thisWind = wind[i];
-          var result = (cell.index == siblings[thisWind]);
-          if (result) {
-            console.log(`${cell.index} == ${siblings[thisWind]} : ${result}`);
-            matches.push(cell.index);
-            // var charCheck = this.$root.grid[cindex];
-            // console.log(`${cindex}`);
-            // console.log(charCheck);
-            this.$root.iSwitchChars(self.selection.index, cell.index);
-            break;
+    // select: function(cell, evt) {
+    //   // ????
+    //   if (this.selection) {
+    //     console.log(`Has a selection`);
+    //     console.log(`${this.selectedIndex}, ${cell.index}`);
+    //     var siblings = this.iGetPotentialMoves(this.selectedIndex);
+    //     var matches = [], dir = false, self = this;
+    //     // console.log(siblings);
+    //     var wind = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+    //     for (var i = 0; i < wind.length; i++) {
+    //       var thisWind = wind[i];
+    //       var result = (cell.index == siblings[thisWind]);
+    //       if (result) {
+    //         console.log(`${cell.index} == ${siblings[thisWind]} : ${result}`);
+    //         matches.push(cell.index);
+    //         // var charCheck = this.$root.grid[cindex];
+    //         // console.log(`${cindex}`);
+    //         // console.log(charCheck);
+    //         this.$root.iSwitchChars(self.selection.index, cell.index);
+    //         this.resetSelection(cell);
+    //         break;
+    //       }
+    //     }
+    //     console.log(matches);
+    //     if (!matches.length) {
+    //       // console.log('What is this?');
+    //       // this.resetSelection(cell);
+    //       // this.clearSelected();
+    //       // this.clearPath();
+    //       // cell.isActive = true;
+    //       // this.selection = cell;
+    //       // this.highlightSteps(cell.index, 1);
+    //       // this.iGetPotentialMoves(cell.index);
+    //       // Event.$emit('navPad-update', cell.index);
+    //     }
+    //     console.log(siblings);
+    //   // } else if (this.selectedIndex == cell.index) {
+    //   //   this.clearPath();
+    //   //   this.clearSelected();
+    //   } else {
+    //     console.log('Does not have selection');
+    //     var toggle = cell.isSelected;
+    //     this.clearSelected();
+    //     // console.log(`This was toggled ${!toggle}`);
+    //     // console.log(evt);
+    //     this.$root.iParseModifiers(evt);
+    //     cell.isSelected = !toggle;
+    //   }
+    //   // if (cell.isSelected) {
+    //   //   console.log('This is already selected');
+    //   //   this.clearSelected();
+    //   //   this.clearPath();
+    //   //   cell.isSelected = false;
+    //   //   cell.isActive = true;
+    //   //   // this.resetSelection();
+    //   //   this.selection = '';
+    //   //   this.highlightSteps(cell.index, 1);
+    //   //   this.iGetPotentialMoves(cell.index);
+    //   //   Event.$emit('navPad-update', cell.index);
+    //   // }
+    // },
+    isSibling: function(elt) {
+      console.log(`Current selection is ${this.selectedIndex}`);
+      var siblings = this.iGetPotentialMoves(this.selectedIndex);
+      var matches = [], dir = false, self = this;
+      // console.log(siblings);
+      var wind = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+      for (var i = 0; i < wind.length; i++) {
+        var thisWind = wind[i];
+        var result = (elt.index == siblings[thisWind]);
+        if (result) {
+          console.log(`${elt.index} == ${siblings[thisWind]} : ${result}`);
+          matches.push(elt.index);
+          // var charCheck = this.$root.grid[cindex];
+          // this.$root.iSwitchChars(self.selection.index, elt.index);
+          // this.resetSelection(elt);
+          break;
+        }
+      }
+      // console.log(siblings);
+      // console.log(matches);
+      if (matches.length)
+        return matches[0];
+      else
+        return false;
+    },
+    updateSelection(elt) {
+      this.clearSelected();
+      this.clearPath();
+      elt.isActive = false;
+      elt.isSelected = true;
+      this.selectedIndex = elt.index;
+      console.log('Updated');
+      console.log(elt.isSelected);
+      // this.selection.hasChar = elt.hasChar;
+      // this.selection.
+    },
+    checkSelected: function() {
+
+      if (this.hasSelection) {
+        var targ = this.selectedIndex;
+        this.grid[targ].isPath = false;
+        this.grid[targ].isActive = false;
+        this.grid[targ].isSelected = true;
+      }
+    },
+    select: function(elt, evt) {
+      console.log(`Current selection is ${this.selectedIndex}`);
+      if (!this.hasSelection) {
+        this.updateSelection(elt);
+        elt.isSelected = true;
+        this.hasSelection = true;
+        console.log('No prior selection');
+        console.log(`${elt.index}, ${evt}`);
+        this.highlightSteps(elt.index, 1);
+        Event.$emit('navPad-update', elt.index);
+      } else {
+        if (elt.isSelected) {
+          console.log('Cell was already selected, toggle off');
+          elt.isSelected = false;
+          elt.isActive = true;
+          this.hasSelection = false;
+          this.clearPath();
+        } else {
+          if (this.isSibling(elt)) {
+            console.log(`${this.selectedIndex} is sibling to ${elt.index}`);
+            this.$root.iSwitchChars(this.selectedIndex, elt.index);
+            this.updateSelection(elt);
+            this.selectedIndex = elt.index;
+            elt.isSelected = true;
+            this.highlightSteps(elt.index, 1);
+            Event.$emit('navPad-update', elt.index);
+          } else {
+            console.log(`Changing selection from ${this.selectedIndex} to ${elt.index}`);
+            this.clearSelected();
+            // this.updateSelection(elt);
+            elt.isSelected = true;
+            this.hasSelection = true;
+            this.highlightSteps(elt.index, 1);
+            Event.$emit('navPad-update', elt.index);
           }
         }
-        if (!matches.length) {
-          this.clearSelected();
-          this.clearPath();
-          cell.isActive = true;
-          this.selection = cell;
-          this.highlightSteps(cell.index, 1);
-          this.iGetPotentialMoves(cell.index);
-          Event.$emit('navPad-update', cell.index);
-        }
-        console.log(siblings);
-      } else {
-        var toggle = cell.isSelected;
-        this.clearSelected();
-        // console.log(evt);
-        this.$root.iParseModifiers(evt);
-        cell.isSelected = !toggle;
+        // elt.isSelected = false;
+        // console.log(`Selection is ${this.selection}`);
       }
-      if (cell.isSelected) {
-        this.selection = cell;
-        this.highlightSteps(cell.index, 1);
-        this.iGetPotentialMoves(cell.index);
-        Event.$emit('navPad-update', cell.index);
+
+    },
+    resetSelection: function(toElt) {
+      console.log('Resetting');
+      // this.clearSelected();
+      this.clearSelected();
+      this.clearPath();
+      this.hasSelection = toElt|false;
+      if (this.hasSelection) {
+        toElt.isActive = true;
+        this.highlightSteps(toElt.index, 1);
+        this.iGetPotentialMoves(toElt.index);
+        Event.$emit('navPad-update', toElt.index);
       }
     },
     clearSelected: function(cell) {
@@ -320,6 +450,7 @@ Vue.component('fengrid', {
     },
     highlightSteps: function(index, steps) {
       // console.log(`Steps for ${index}`);
+      // console.log(`Highlighting ${index} for ${steps} steps`);
       var xs = ['N', 'S'], ys = ['E', 'W'];
       for (var s = 0; s < steps; s++) {
         for (var a = 0; a < xs.length; a++) {
@@ -711,6 +842,6 @@ var app = new Vue({
   mounted: function () {
     this.datum();
     this.iPreview(62);
-    this.iSwitchChars(14, 0);
+    // this.iSwitchChars(14, 0);
   },
 });
