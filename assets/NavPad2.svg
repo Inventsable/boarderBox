@@ -1,0 +1,40 @@
+<svg id="Gamepad" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <g id="NW">
+    <rect class="bumper" x="2.5" y="2.5" width="46" height="45" rx="4.5" ry="4.5"/>
+    <polygon id="arrow" class="bumpIcon" points="20.5 34.9 20.5 20.5 34.9 20.5 20.5 34.9"/>
+  </g>
+  <g id="W">
+    <rect class="bumper" x="2.5" y="55.5" width="46" height="90" rx="4.5" ry="4.5"/>
+    <polygon id="arrow-2" data-name="arrow" class="bumpIcon" points="32.63 114.08 19.05 100.5 32.63 86.92 32.63 114.08"/>
+  </g>
+  <g id="SW">
+    <rect class="bumper" x="2.5" y="150.5" width="46" height="45" rx="4.5" ry="4.5"/>
+    <g id="SW-2" data-name="SW">
+      <polygon id="arrow-3" data-name="arrow" class="bumpIcon" points="34.9 180.5 20.5 180.5 20.5 166.1 34.9 180.5"/>
+    </g>
+  </g>
+  <g id="S">
+    <rect class="bumper" x="55.5" y="150.5" width="90" height="45" rx="4.5" ry="4.5"/>
+    <g id="S-2" data-name="S">
+      <polygon id="arrow-4" data-name="arrow" class="bumpIcon" points="114.08 168.37 100.5 181.94 86.92 168.37 114.08 168.37"/>
+    </g>
+  </g>
+  <g id="SE">
+    <rect class="bumper" x="152.5" y="150.5" width="46" height="45" rx="4.5" ry="4.5"/>
+    <polygon id="arrow-5" data-name="arrow" class="bumpIcon" points="180.5 166.1 180.5 180.5 166.1 180.5 180.5 166.1"/>
+  </g>
+  <g id="E">
+    <rect class="bumper" x="152.5" y="55.5" width="46" height="90" rx="4.5" ry="4.5"/>
+    <polygon id="arrow-6" data-name="arrow" class="bumpIcon" points="168.37 86.92 181.94 100.5 168.37 114.08 168.37 86.92"/>
+  </g>
+  <g id="NE">
+    <rect class="bumper" x="152.5" y="2.5" width="46" height="45" rx="4.5" ry="4.5"/>
+    <polygon id="arrow-7" data-name="arrow" class="bumpIcon" points="166.1 20.5 180.5 20.5 180.5 34.9 166.1 20.5"/>
+  </g>
+  <g id="N">
+    <rect class="bumper" x="55.5" y="2.5" width="90" height="45" rx="4.5" ry="4.5"/>
+    <polygon id="arrow-8" data-name="arrow" class="bumpIcon" points="86.92 32.63 100.5 19.05 114.08 32.63 86.92 32.63"/>
+  </g>
+  <rect id="core" class="bumpCore" x="55.5" y="55.5" width="90" height="90"/>
+  <rect id="frame" class="bumpFrame" width="200" height="200"/>
+</svg>

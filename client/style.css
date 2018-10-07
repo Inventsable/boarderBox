@@ -9,18 +9,31 @@
   --color-dark: #2b2b2b;
   --color-night: #1f1f1f;
   --color-text: #a1a1a1;
+  --colorBorder: #808080;
+  --colorZ: #4583a6;
+  --colorA: #232931;
+  --colorB: #393e46;
+  --colorC: #4ecca3;
+  --colorD: #eeeeee;
+  --colorLimit: #e25433;
+  --colorFree: #00c105;
+  --colorFreeText: #33b936;
   --fen-root: 8;
+  --border-grid: 1px solid var(--color-border);
   font-size: 12px;
   font-family: Rubik;
-  color: var(--color-text);
+  color: var(--colorZ);
   margin: .5rem .25rem .5rem .25rem;
-  background-color: var(--color-bg);
+  background-color: var(--colorA);
 }
 
 .app {
   width: 700px;
   max-width: 700px;
 }
+
+.curPoint {cursor: pointer;}
+.curMove {cursor: move;}
 
 .logic {
   width: 100%;
@@ -35,40 +48,55 @@
   width: 100%;
 }
 
+.inputFEN {
+  display: flex;
+  justify-content: center;
+  font-size: 1.5rem;
+}
+
+.input {
+  display: flex;
+  padding: .25rem .5rem;
+  color: var(--color-text);
+  width: 80%;
+  background-color: var(--colorA);
+  border: 2px solid var(--colorBorder);
+}
+
 .navLetter {
-  /* border: 2px solid red; */
   display: flex;
   align-items: center;
 }
 
-.navCellHigh {
+.navAnnoHigh {
+  display: flex;
+  justify-content: space-between;
   font-size: .75rem;
   padding: .25rem 0px 0px .25rem;
-  /* border: 2px solid green; */
   width: 100%;
-  /* height: 1rem; */
 }
 
-.navCellMid {
+.navAnnoType {
+  /* font-size: 1rem; */
+  font-weight: 700;
+  margin-right: .5rem;
+}
+
+.navAnnoMid {
   display: flex;
   justify-content: center;
   font-size: 2rem;
-  /* border: 2px solid red; */
   width: 100%;
-  /* height: 1rem; */
 }
 
-.navCellLow {
-  /* border: 2px solid blue; */
+.navAnnoLow {
   display: flex;
   justify-content: flex-end;
   width: 100%;
   padding: 0px .25rem .25rem 0px;
-
-  /* height: 1rem; */
 }
 
-.navCell {
+[class^="navCell"] {
   display: flex;
   flex-wrap: wrap;
   box-sizing: border-box;
@@ -76,28 +104,137 @@
   align-items: center;
   width: 100%;
   height: 100%;
-  /* padding: 15% 0rem 9% 0rem; */
+  background-color: transparent;
   cursor: pointer;
   user-select: none;
-  /* height: 2rem; */
-  border-style: solid;
-  border-color: grey;
-  border-width: 1px .5px;
+  border: var(--border-grid);
+}
+
+.navCell-Active {
+  background-color: var(--colorB);
+  border-color: var(--color-selected);
+}
+
+.navCell-Idle {
+  color: var(--colorBorder);
+  background-color: var(--colorA);
+}
+
+.nav-Path {
+  color: var(--colorFreeText);
+  background-color: var(--colorB);
+  border-color: var(--colorFree);
+  /* border-color: var(--color-selected; */
+}
+
+.navCell-Selected {
+  color: var(--colorA);
+  background-color: var(--colorD);
 }
 
 .navGrid {
-  /* font-size: 2rem; */
-  /* font-weight: 400; */
-  /* display: 80%; */
   margin: 1rem 5%;
-  border: 1px solid grey;
-  /* display: flex;
-  justify-content: center; */
+  border: var(--border-grid);
   display: grid;
   grid-row-gap:    0px;
   grid-column-gap: 0px;
   grid-template-rows:    repeat(var(--fen-root), 1fr);
   grid-template-columns: repeat(var(--fen-root), 1fr);
+}
+
+.gameElts {
+  display: flex;
+  justify-content: flex-end;
+  margin: .5rem 5%;
+}
+
+.navPreview {
+  margin-right: 1rem;
+  width: 10rem;
+  height: 10rem;
+  border: 2px solid var(color-border);
+  display: grid;
+  grid-row-gap:    .5rem;
+  grid-column-gap: .5rem;
+  grid-template-rows:   1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+[class^="navPreview-"] {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: var(--border-grid);
+  background-color: var(--color-night);
+  /* border-radius: .25rem; */
+  /* cursor: pointer; */
+}
+
+.navPad {
+  width: 10rem;
+  height: 10rem;
+  /* border: 2px solid red; */
+  display: grid;
+  grid-row-gap:    .5rem;
+  grid-column-gap: .5rem;
+  grid-template-rows:   1fr 2fr 1fr;
+  grid-template-columns: 1fr 2fr 1fr;
+}
+
+[class^="navPad-"] {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: .25rem;
+  /* cursor: pointer; */
+}
+
+[class^="navPad-"]:hover {
+  /* background-color: var(--color-hover); */
+}
+
+.navPad-Corner {
+  font-size: 1.25rem;
+  background-color: var(--color-night);
+}
+
+.navPad-Bumper {
+  font-size: 1.5rem;
+  background-color: var(--color-night);
+}
+
+.navPad-Center {
+  /* background-color: var(--color-night); */
+  font-size: 2rem;
+  /* border: 2px solid red; */
+}
+
+svg {
+  width: 100%;
+  height: 100%;
+}
+
+.gameWrap {
+  width: 10rem;
+  height: 10rem;
+  margin-right: 1rem;
+}
+
+.bumper {
+  fill: gray;
+}
+
+.bumpIcon {
+  fill: #b4b4b4;
+}
+
+.bumpCore, .bumpFrame {
+  fill: none;
+}
+
+.bumpCore {
+  stroke: #000;
+  stroke-miterlimit: 10;
 }
 
 .userInput {
