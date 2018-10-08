@@ -1,17 +1,231 @@
 window.Event = new Vue();
 
 Vue.component('toolbar', {
+  // <gamepad></gamepad>
   template: `
   <div class="gameElts">
-    <gamepad></gamepad>
+    <navstring></navstring>
+    <chesspreview></chesspreview>
     <navpreview></navpreview>
     <navpad></navpad>
+    <modkeys></modkeys>
   </div>
   `,
   data() {
     return {
       msg: 'Hello there'
     }
+  }
+})
+
+
+Vue.component('navstring', {
+  template: `
+    <div class="navstringWrap">
+      <input
+        class="NAVinput" type="text"
+        v-model="NAVstring"
+        v-on:input="updateStr(NAVstring)"
+        @blur="navDisable"
+        @focus="navEnable"
+        @keyup.enter="submit"
+        >
+      <div :class="validClass('char')">
+        <span class="fa fa-md fa-chess-pawn"></span>
+      </div>
+      <div :class="validClass('route')">
+        <span class="fa fa-md fa-bicycle"></span>
+      </div>
+    </div>
+  `,
+  data() {
+    return {
+      NAVstring: '49EE',
+      NAVigate: false,
+      rx: {
+        isEmpty: /^$/,
+        char: /^\d*/,
+        mvmt: /[NESW]*$/,
+        ablePath: /^\d*[NESW]{1,}$/,
+        // ableChar: //
+      }
+    }
+  },
+  computed: {
+    piece: function() {
+      if (this.rx.char.test(this.NAVstring)) {
+        // var match = false;
+        match = this.NAVstring.match(this.rx.char)[0];
+        return (match < this.$root.TOTAL) ? match : false;
+      } else {
+        return false;
+      }
+    },
+    route: function() {
+      var matches = this.NAVstring.match(this.rx.mvmt);
+      if (matches.length)
+        return matches[0]
+      else
+        return false;
+    },
+  },
+  methods: {
+    submit: function() {
+      // console.log(this.NAVstring);
+      if (this.NAVigate) {
+        var route = this.getRoute();
+        var targ = route[(route.length - 1)];
+        // console.log(route);
+        Event.$emit('NAVtravel', [this.piece, targ])
+        console.log(`Moving ${this.piece} to ${targ}`);
+        this.resetNAV(targ);
+      }
+    },
+    resetNAV(index) {
+      var str = this.NAVstring;
+      var match = str.match(this.rx.char);
+      if (match.length) {
+        var rep = str.replace(this.rx.char, index);
+        var step = rep.replace(this.rx.mvmt, 'N');
+        this.NAVstring = step;
+      }
+      this.highlightRoute();
+      // Re-light cells
+    },
+    navDisable: function() {
+      this.NAVigate = false;
+      var board = this.$root.$children[1];
+      board.clearPath(), board.clearSelected();
+      // console.log('Disabling');
+    },
+    navEnable: function() {
+      this.NAVigate = true;
+      this.highlightRoute();
+      Event.$emit('chess-update', this.piece)
+      // console.log('Enabling');
+    },
+    validate: function() {
+      if (this.rx.isEmpty.test(this.NAVstring)) {
+        console.log(`Empty string`);
+      } else if (this.rx.ablePath.test(this.NAVstring)) {
+        console.log(`${this.NAVstring} can travel`);
+      } else if (this.rx.char.test(this.NAVstring)) {
+        console.log(`${this.NAVstring} has character but no path`);
+      } else {
+        console.log(`${this.NAVstring} cannot recognize input`);
+      }
+    },
+    validClass: function(type) {
+      var style = 'navBtn-', match = 'Invalid'
+      if (type == 'char') {
+        if (this.piece) {
+          if (this.NAVigate)
+            match = 'ValidActive'
+          else
+            match = 'ValidIdle'
+        }
+      } else {
+        if (this.route) {
+          if (this.NAVigate)
+            match = 'ValidActive'
+          else
+            match = 'ValidIdle'
+        }
+      }
+      style += match
+      return style;
+    },
+    updateStr: function(str) {
+      if (this.NAVigate) {
+        this.validate();
+        this.highlightRoute();
+      }
+    },
+    // modClass: function(state, suffix) {
+    //   var style = 'modkey-';
+    //   if (state)
+    //     style += suffix;
+    //   else
+    //     style += 'Idle'
+    //   return style;
+    // },
+    getNAV: function() {
+      this.NAVstring = this.$root.NAVstring;
+    },
+    highlightRoute: function() {
+      var board = this.$root.$children[1];
+      board.clearPath(), board.clearSelected();
+      var targ = this.piece, route = this.getRoute();
+      if (targ) {
+        board.grid[targ].isActive = true;
+        if (route) {
+          for (var i = 0; i < route.length; i++) {
+            var path = route[i];
+            board.grid[path].isPath = true;
+          }
+        }
+      }
+    },
+    getRoute: function() {
+      var board = this.$root.$children[1];
+      var targ = this.piece, route = this.route;
+      var steps = [];
+      for (var i = 0; i < route.length; i ++) {
+        if (i < 1)
+          steps.push(Number(targ));
+        var lastStep = steps[steps.length - 1];
+        steps.push(this.$root.iStream(lastStep, route[i], 1));
+      }
+      return steps;
+    },
+  },
+  mounted() {
+    var self = this;
+    // this.NAVigate = true;
+    this.getNAV();
+    // console.log(this.piece);
+    // console.log(this.route);
+    // this.highlightRoute();
+    // Event.$on('updateModifiers', self.getMods)
+  }
+})
+
+Vue.component('modkeys', {
+  template: `
+    <div class="modkeyWrap">
+      <div :class="modClass(Ctrl, 'Ctrl')"></div>
+      <div :class="modClass(Shift, 'Shift')"></div>
+      <div :class="modClass(Alt, 'Alt')"></div>
+      <div :class="modClass(Meta, 'Meta')"></div>
+    </div>
+  `,
+  data() {
+    return {
+      Ctrl: false,
+      Shift: false,
+      Alt: false,
+      Meta: false,
+    }
+  },
+  methods: {
+    modClass: function(state, suffix) {
+      var style = 'modkey-';
+      if (state)
+        style += suffix;
+      else
+        style += 'Idle'
+      return style;
+    },
+    getMods: function() {
+      this.Ctrl = this.$root.Ctrl;
+      this.Alt = this.$root.Alt;
+      this.Shift = this.$root.Shift;
+      this.Meta = this.$root.Meta;
+    }
+  },
+  mounted() {
+    var self = this;
+    Event.$on('updateModifiers', self.getMods)
   }
 })
 
@@ -46,19 +260,203 @@ Vue.component('gamepad', {
   }
 })
 
+Vue.component('chesspreview', {
+  // <div v-for="cell in child" class="navPreview-Cell"><span>{{ifExist(cell)}}</span></div>
+  template: `
+  <div class="chessPreview">
+    <div :class="previewClass(child.NW)"><span :class="chessClass(child.NW)"></span></div>
+    <div :class="previewClass(child.N)"><span :class="chessClass(child.N)"></span></div>
+    <div :class="previewClass(child.NE)"><span :class="chessClass(child.NE)"></span></div>
+    <div :class="previewClass(child.W)"><span :class="chessClass(child.W)"></span></div>
+    <div :class="previewClass(child.I)"><span :class="chessClass(child.I)"></span></div>
+    <div :class="previewClass(child.E)"><span :class="chessClass(child.E)"></span></div>
+    <div :class="previewClass(child.SW)"><span :class="chessClass(child.SW)"></span></div>
+    <div :class="previewClass(child.S)"><span :class="chessClass(child.S)"></span></div>
+    <div :class="previewClass(child.SE)"><span :class="chessClass(child.SE)"></span></div>
+  </div>
+  `,
+  data() {
+    return {
+      shadow: {},
+      child: {
+        N: {},
+        NE: {},
+        E: {},
+        SE: {},
+        S: {},
+        SW: {},
+        W: {},
+        NW: {},
+        I: {},
+      },
+      // N:
+      rx: {
+        isEmpty: /^$/,
+      }
+    }
+  },
+  methods: {
+    movePiece: function(set) {
+      console.log(`${set[0]} to ${set[1]}`);
+      this.$root.iSwitchChars(set[0], set[1]);
+    },
+    chessClass: function(index) {
+      try {
+      // console.log(e);
+      var style = 'noChess';
+      var valid = true;
+      if (index == null)
+        valid = false;
+        if (valid) {
+          var temp = this.$root.iGetChar(index);
+          if (this.$root.rx.isWord.test(temp)) {
+            style = 'fa fa-lg fa-chess-'
+            if (/p/i.test(temp))
+              style += 'pawn'
+            else if (/r/i.test(temp))
+              style += 'rook'
+            else if (/k/i.test(temp))
+              style += 'knight'
+            else if (/b/i.test(temp))
+              style += 'bishop'
+            else if (/q/i.test(temp))
+              style += 'queen'
+            else if (/z/i.test(temp))
+              style += 'king'
+            else
+              style += 'none'
+          } else {
+
+          }
+
+          if (this.$root.rx.lowercase.test(temp)) {
+            style += ' teamA'
+          } else {
+            style += ' teamB'
+          }
+          // console.log(e);
+          // return style;
+        } else {
+          style = 'noChess';
+        }
+      } catch(err) {
+        style = 'noChess'
+      } finally {
+        return style
+      }
+
+    },
+    previewClass: function(index) {
+      var valid = true;
+      try {
+        if ((index == null) || (index > this.$root.TOTAL))
+          valid = false;
+        // console.log(e);
+        var style = 'chessPreview-';
+
+        if ((this.$root.Shift) && (valid)) {
+          // console.log(index);
+          var details = this.getDetails(index);
+          if (details) {
+            // console.log(details);
+            if (this.$root.isOdd(details.y)) {
+              if (this.$root.isOdd(details.x)) {
+                style += 'ActiveB'
+              } else {
+                style += 'ActiveA'
+              }
+            } else {
+              if (this.$root.isOdd(details.x)) {
+                style += 'ActiveA'
+              } else {
+                style += 'ActiveB'
+              }
+            }
+          }
+          // console.log(`i:${cell.i}, x:${cell.x}, y:${cell.y}`);
+        } else {
+          var details = this.getDetails(index);
+          // console.log(details);
+          if (details) {
+            if (this.$root.isOdd(details.y)) {
+              if (this.$root.isOdd(details.x)) {
+                style += 'IdleB'
+              } else {
+                style += 'IdleA'
+              }
+            } else {
+              if (this.$root.isOdd(details.x)) {
+                style += 'IdleA'
+              } else {
+                style += 'IdleB'
+              }
+            }
+          } else {
+            // console.log(index);
+            // console.log(details);
+          }
+        }
+      } catch(e) {
+        // console.log(e);
+        style = 'chessPreview-Idle'
+      } finally {
+        return style;
+      }
+    },
+    getDetails: function(index) {
+      // console.log(index);
+      try {
+        var mirror = {
+          i: index,
+          val: this.$root.iGetChar(index),
+          x: this.$root.iGetPos(index)[1],
+          y: this.$root.iGetPos(index)[0]
+        }
+        if (mirror.val == null) {
+          mirror = false;
+        }
+      } catch(err) {
+        mirror = false;
+      } finally {
+        return mirror;
+      }
+    },
+    getPotential: function(index) {
+      var grid = this.$root.$children[1];
+      var scan = grid.iGetPotentialMoves(index);
+      scan['I'] = index;
+      var mirror = {};
+      for (let [key,value] of Object.entries(scan)) {
+        if (value > (-1)) {
+          mirror[key] = value;
+          // mirror[key] = this.$root.iGetChar(value);
+        }
+      }
+      this.child = mirror;
+    },
+  },
+  mounted() {
+    var self = this;
+    Event.$on('navPad-update', this.getPotential)
+    Event.$on('chess-update', this.getPotential)
+    Event.$on('NAVtravel', this.movePiece)
+    // this.getPotential(27);
+  }
+})
+
 Vue.component('navpreview', {
   // <div v-for="cell in child" class="navPreview-Cell"><span>{{ifExist(cell)}}</span></div>
   template: `
   <div class="navPreview">
-    <div class="navPreview-Cell"><span>{{child.NW}}</span></div>
-    <div class="navPreview-Cell"><span>{{child.N}}</span></div>
-    <div class="navPreview-Cell"><span>{{child.NE}}</span></div>
-    <div class="navPreview-Cell"><span>{{child.W}}</span></div>
-    <div class="navPreview-Cell"><span>{{child.I}}</span></div>
-    <div class="navPreview-Cell"><span>{{child.E}}</span></div>
-    <div class="navPreview-Cell"><span>{{child.SW}}</span></div>
-    <div class="navPreview-Cell"><span>{{child.S}}</span></div>
-    <div class="navPreview-Cell"><span>{{child.SE}}</span></div>
+    <div :class="previewClass(child.NW)"><span>{{child.NW}}</span></div>
+    <div :class="previewClass(child.N)"><span>{{child.N}}</span></div>
+    <div :class="previewClass(child.NE)"><span>{{child.NE}}</span></div>
+    <div :class="previewClass(child.W)"><span>{{child.W}}</span></div>
+    <div :class="previewClass(child.I)"><span>{{child.I}}</span></div>
+    <div :class="previewClass(child.E)"><span>{{child.E}}</span></div>
+    <div :class="previewClass(child.SW)"><span>{{child.SW}}</span></div>
+    <div :class="previewClass(child.S)"><span>{{child.S}}</span></div>
+    <div :class="previewClass(child.SE)"><span>{{child.SE}}</span></div>
   </div>
   `,
   data() {
@@ -73,11 +471,26 @@ Vue.component('navpreview', {
         W: '',
         NW: '',
         I: '',
-      }
+      },
       // N:
+      rx: {
+        isEmpty: /^$/,
+      }
     }
   },
   methods: {
+    previewClass: function(e) {
+      var valid = true;
+      if (e == null)
+        valid = false;
+      // console.log(e);
+      var style = 'navPreview-';
+      if ((this.$root.Shift) && (valid))
+        style += 'Active'
+      else
+        style += 'Idle'
+      return style;
+    },
     getPotential: function(index) {
       var grid = this.$root.$children[1];
       var scan = grid.iGetPotentialMoves(index);
@@ -89,30 +502,7 @@ Vue.component('navpreview', {
           // console.log(`${key}: ${value}`);
         }
       }
-      this.chessboardPiece(index);
       this.child = mirror;
-    },
-    chessboardPiece: function(index) {
-      var pieces = {
-        p: 'pawn',
-        r: 'rook',
-        k: 'knight',
-        b: 'bishop',
-        q: 'queen',
-        z: 'king',
-      };
-      // var temp = this.$root.grid[index];
-      // console.log(this.$root.grid);
-      // if (this.$root.grid[index].hasChar) {
-      //   for (let [key, value] in Object.entries(pieces)) {
-      //     var type = RegExp(this.$root.grid[index].value.charAt(0), 'i');
-      //     if (type.test(value))
-      //       console.log(`match at ${value}`);
-      //   }
-      //   style += 'fa fa-2x fa-chess-';
-      // } else {
-      //   style += 'noChar';
-      // }
     }
   },
   mounted() {
@@ -226,13 +616,15 @@ Vue.component('fengrid', {
         this.grid[index].isActive = val;
         this.grid[index].details = val;
       }
-      if (this.grid[index].isPath) {
-        console.log('Can travel');
-      }
+      // if (this.grid[index].isPath) {
+      //   console.log('Can travel');
+      // }
       if (this.grid[index].isActive) {
         if (this.$root.Shift) {
-          this.highlightSteps(index, 1);
-          this.iGetPotentialMoves(index);
+          // if (this.grid[index].hasChar) {
+            this.highlightSteps(index, 1);
+            this.iGetPotentialMoves(index);
+          // }
           Event.$emit('navPad-update', index);
         }
       }
@@ -252,67 +644,6 @@ Vue.component('fengrid', {
       }
       this.$root.iParseModifiers(evt);
     },
-    // select: function(cell, evt) {
-    //   // ????
-    //   if (this.selection) {
-    //     console.log(`Has a selection`);
-    //     console.log(`${this.selectedIndex}, ${cell.index}`);
-    //     var siblings = this.iGetPotentialMoves(this.selectedIndex);
-    //     var matches = [], dir = false, self = this;
-    //     // console.log(siblings);
-    //     var wind = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
-    //     for (var i = 0; i < wind.length; i++) {
-    //       var thisWind = wind[i];
-    //       var result = (cell.index == siblings[thisWind]);
-    //       if (result) {
-    //         console.log(`${cell.index} == ${siblings[thisWind]} : ${result}`);
-    //         matches.push(cell.index);
-    //         // var charCheck = this.$root.grid[cindex];
-    //         // console.log(`${cindex}`);
-    //         // console.log(charCheck);
-    //         this.$root.iSwitchChars(self.selection.index, cell.index);
-    //         this.resetSelection(cell);
-    //         break;
-    //       }
-    //     }
-    //     console.log(matches);
-    //     if (!matches.length) {
-    //       // console.log('What is this?');
-    //       // this.resetSelection(cell);
-    //       // this.clearSelected();
-    //       // this.clearPath();
-    //       // cell.isActive = true;
-    //       // this.selection = cell;
-    //       // this.highlightSteps(cell.index, 1);
-    //       // this.iGetPotentialMoves(cell.index);
-    //       // Event.$emit('navPad-update', cell.index);
-    //     }
-    //     console.log(siblings);
-    //   // } else if (this.selectedIndex == cell.index) {
-    //   //   this.clearPath();
-    //   //   this.clearSelected();
-    //   } else {
-    //     console.log('Does not have selection');
-    //     var toggle = cell.isSelected;
-    //     this.clearSelected();
-    //     // console.log(`This was toggled ${!toggle}`);
-    //     // console.log(evt);
-    //     this.$root.iParseModifiers(evt);
-    //     cell.isSelected = !toggle;
-    //   }
-    //   // if (cell.isSelected) {
-    //   //   console.log('This is already selected');
-    //   //   this.clearSelected();
-    //   //   this.clearPath();
-    //   //   cell.isSelected = false;
-    //   //   cell.isActive = true;
-    //   //   // this.resetSelection();
-    //   //   this.selection = '';
-    //   //   this.highlightSteps(cell.index, 1);
-    //   //   this.iGetPotentialMoves(cell.index);
-    //   //   Event.$emit('navPad-update', cell.index);
-    //   // }
-    // },
     isSibling: function(elt) {
       console.log(`Current selection is ${this.selectedIndex}`);
       var siblings = this.iGetPotentialMoves(this.selectedIndex);
@@ -343,14 +674,11 @@ Vue.component('fengrid', {
       this.clearPath();
       elt.isActive = false;
       elt.isSelected = true;
+      elt.isPath = false;
       this.selectedIndex = elt.index;
-      console.log('Updated');
-      console.log(elt.isSelected);
-      // this.selection.hasChar = elt.hasChar;
-      // this.selection.
+
     },
     checkSelected: function() {
-
       if (this.hasSelection) {
         var targ = this.selectedIndex;
         this.grid[targ].isPath = false;
@@ -359,6 +687,7 @@ Vue.component('fengrid', {
       }
     },
     select: function(elt, evt) {
+      var origin = this.selectedIndex;
       console.log(`Current selection is ${this.selectedIndex}`);
       if (!this.hasSelection) {
         this.updateSelection(elt);
@@ -366,8 +695,10 @@ Vue.component('fengrid', {
         this.hasSelection = true;
         console.log('No prior selection');
         console.log(`${elt.index}, ${evt}`);
-        this.highlightSteps(elt.index, 1);
-        Event.$emit('navPad-update', elt.index);
+        if (elt.hasChar) {
+          this.highlightSteps(elt.index, 1);
+          Event.$emit('navPad-update', elt.index);
+        }
       } else {
         if (elt.isSelected) {
           console.log('Cell was already selected, toggle off');
@@ -377,25 +708,29 @@ Vue.component('fengrid', {
           this.clearPath();
         } else {
           if (this.isSibling(elt)) {
-            console.log(`${this.selectedIndex} is sibling to ${elt.index}`);
-            this.$root.iSwitchChars(this.selectedIndex, elt.index);
+            // console.log(`${this.selectedIndex} is sibling to ${elt.index}`);
+            // IF origin is char and targ is not, MOVE
+            if (this.grid[origin].hasChar) {
+              this.$root.iSwitchChars(this.selectedIndex, elt.index);
+            }
+            // ELSE IF enemy, ATTACK
+            // ELSE IF friend
             this.updateSelection(elt);
-            this.selectedIndex = elt.index;
-            elt.isSelected = true;
             this.highlightSteps(elt.index, 1);
             Event.$emit('navPad-update', elt.index);
           } else {
             console.log(`Changing selection from ${this.selectedIndex} to ${elt.index}`);
-            this.clearSelected();
-            // this.updateSelection(elt);
-            elt.isSelected = true;
-            this.hasSelection = true;
-            this.highlightSteps(elt.index, 1);
-            Event.$emit('navPad-update', elt.index);
+            this.updateSelection(elt);
+            if (elt.hasChar) {
+              // console.log('This has a character');
+              this.highlightSteps(elt.index, 1);
+              Event.$emit('navPad-update', elt.index);
+            }
           }
         }
         // elt.isSelected = false;
         // console.log(`Selection is ${this.selection}`);
+        Event.$emit('navPad-update', elt.index)
       }
 
     },
@@ -515,12 +850,18 @@ Vue.component('fengrid', {
 Vue.component('fenput', {
   template : `
   <div class="inputFEN">
-    <input class="input" v-model="raw"/>
+    <input class="FENput" v-model="raw"/>
+    <div class="FENminor">
+      <span class="FENminorKey">{{ugly}}</span>
+      <span class="FENminorKey">{{pretty}}</span>
+    </div>
   </div>
   `,
   data() {
     return {
       raw: this.$root.FEN,
+      ugly: this.$root.FENugly,
+      pretty: this.$root.FENpretty,
     }
   }
 })
@@ -564,6 +905,7 @@ var app = new Vue({
     Y: 0,
     FENdex: 0,
     FEN: 'RKBZQBKRPPPPPP1P111111P111111111111p111111111111ppp1pppprkbzqbkr',
+    NAVstring: '57NNE',
     rx: {
       unique: /[a-zA-Z]|(\d*)/gm,
       empty: /^$/gm,
@@ -722,7 +1064,6 @@ var app = new Vue({
               }
             }
           }
-
         }
       }
       return index;
@@ -796,6 +1137,8 @@ var app = new Vue({
       this.Ctrl = (evt.ctrlKey) ? true : false;
       this.Shift = (evt.shiftKey) ? true : false;
       this.Alt = (evt.altKey) ? true : false;
+      this.Meta = (evt.metaKey) ? true : false;
+      Event.$emit('updateModifiers');
     },
     iSwitchChars: function(iA, iB) {
       var result = this.FEN;
@@ -837,11 +1180,22 @@ var app = new Vue({
     },
     setCSS(prop, data){
       document.documentElement.style.setProperty('--' + prop, data);
-    }
+    },
+    isEven: function(n) {
+       return n % 2 == 0;
+    },
+    isOdd: function(n) {
+       return Math.abs(n % 2) == 1;
+    },
   },
   mounted: function () {
     this.datum();
     this.iPreview(62);
+    var self = this;
+    document.addEventListener('keydown', function(e){
+      self.iParseModifiers(e);
+    })
+    document.addEventListener('keyup', self.iParseModifiers)
     // this.iSwitchChars(14, 0);
   },
 });

@@ -1,5 +1,5 @@
 # to-do
 
-* Ugly Grid visualizer
-* `this.FEN.splice`
-* Streaming for character movement
+* Friend / foe recognition
+* FEN layers -- original is piece position, need BG tiles and UI tiles.
+* NAVstrings: 37NNWE
